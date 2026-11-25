@@ -17,8 +17,12 @@ Write-Host "2/4 Publishing NovaDownloader.ExtensionHost (sharing runtime)..."
 dotnet publish "$root\src\NovaDownloader.ExtensionHost\NovaDownloader.ExtensionHost.csproj" `
     -c Release -r win-x64 --self-contained false -o "$stageDir"
 
-# Remove .pdb and xml doc files from payload to keep installer compact
+# Remove .pdb, xml doc, and non-English satellite resource folders to keep installer compact
 Get-ChildItem $stageDir -Include "*.pdb","*.xml" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+@("cs","de","es","fr","it","ja","ko","pl","pt-BR","ru","tr","zh-Hans","zh-Hant") | ForEach-Object {
+    $loc = Join-Path $stageDir $_
+    if (Test-Path $loc) { Remove-Item $loc -Recurse -Force -ErrorAction SilentlyContinue }
+}
 
 Write-Host "3/4 Packaging payload.zip..."
 Compress-Archive -Path "$stageDir\*" -DestinationPath $payloadZip -CompressionLevel Optimal

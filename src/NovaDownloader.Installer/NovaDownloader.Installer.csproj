@@ -7,6 +7,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>NovaDownloader-Setup</AssemblyName>
     <ApplicationIcon>..\NovaDownloader.UI\Assets\app.ico</ApplicationIcon>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
