@@ -99,6 +99,7 @@
                     <StackPanel>
                         <CheckBox x:Name="DesktopShortcutCheckBox" Content="Create Desktop shortcut" IsChecked="True" Foreground="#E2E8F0" Margin="0,0,0,6"/>
                         <CheckBox x:Name="RegisterHostCheckBox" Content="Register Browser Native Messaging Host (Chrome / Edge / Opera / Brave)" IsChecked="True" Foreground="#E2E8F0" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="DownloadToolsCheckBox" Content="Download yt-dlp.exe &amp; ffmpeg.exe (recommended for YouTube / HLS)" IsChecked="True" Foreground="#E2E8F0" Margin="0,0,0,6"/>
                         <CheckBox x:Name="StartupCheckBox" Content="Launch NovaDownloader on Windows startup (minimized to tray)" IsChecked="True" Foreground="#E2E8F0" Margin="0,0,0,6"/>
                         <CheckBox x:Name="LaunchNowCheckBox" Content="Launch NovaDownloader after installation" IsChecked="True" Foreground="#E2E8F0"/>
                     </StackPanel>

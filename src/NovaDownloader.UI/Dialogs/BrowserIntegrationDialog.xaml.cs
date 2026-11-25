@@ -16,7 +16,24 @@ public partial class BrowserIntegrationDialog : Window
         InitializeComponent();
         _hostExePath = ResolveHostExePath();
         _extensionDirPath = ResolveExtensionDirPath();
+        EnsureHostRegisteredSilently();
         RefreshStatus();
+    }
+
+    private void EnsureHostRegisteredSilently()
+    {
+        if (_hostExePath == null) return;
+        try
+        {
+            var psi = new ProcessStartInfo(_hostExePath, "--install")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            proc?.WaitForExit(4000);
+        }
+        catch { }
     }
 
     private static string? ResolveHostExePath()

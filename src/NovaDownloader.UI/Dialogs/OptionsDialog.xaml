@@ -404,7 +404,7 @@
                                     </Grid>
 
                                     <!-- ffmpeg row -->
-                                    <Grid>
+                                    <Grid Margin="0,0,0,10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="85"/>
                                             <ColumnDefinition Width="72"/>
@@ -416,6 +416,11 @@
                                         <TextBox Grid.Column="2" x:Name="FfmpegPathBox" Style="{StaticResource OptInput}"/>
                                         <Button Grid.Column="3" Content="..." Style="{StaticResource OptBtnStyle}" Padding="10,5" Margin="6,0,0,0" Click="BrowseFfmpeg_Click"/>
                                     </Grid>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="InstallToolsBtn" Content="Download Missing Tools (yt-dlp &amp; ffmpeg)"
+                                                Style="{StaticResource OptAccentBtnStyle}" Padding="12,5" Click="InstallTools_Click"/>
+                                    </StackPanel>
 
                                     <TextBlock x:Name="ToolsFeedbackText" FontSize="11" Foreground="#94A3B8" Margin="0,8,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>

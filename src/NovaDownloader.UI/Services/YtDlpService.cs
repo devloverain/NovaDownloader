@@ -32,6 +32,9 @@ public static class YtDlpService
         var local = Path.Combine(baseDir, "Tools", "yt-dlp.exe");
         if (File.Exists(local)) return local;
 
+        var appDataTool = Path.Combine(UserSettingsService.AppDataDirectory, "Tools", "yt-dlp.exe");
+        if (File.Exists(appDataTool)) return appDataTool;
+
         var winGet = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Microsoft", "WinGet", "Links", "yt-dlp.exe");
         if (File.Exists(winGet)) return winGet;
@@ -54,6 +57,13 @@ public static class YtDlpService
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;
         var local = Path.Combine(baseDir, "Tools", "ffmpeg.exe");
         if (File.Exists(local)) return local;
+
+        var appDataTool = Path.Combine(UserSettingsService.AppDataDirectory, "Tools", "ffmpeg.exe");
+        if (File.Exists(appDataTool)) return appDataTool;
+
+        var winGet = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Microsoft", "WinGet", "Links", "ffmpeg.exe");
+        if (File.Exists(winGet)) return winGet;
 
         var pathDirs = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator);
         foreach (var dir in pathDirs)
@@ -78,8 +88,14 @@ public static class YtDlpService
         var ytDlpExe = FindYtDlpExe();
         if (ytDlpExe == null)
         {
-            MessageBox.Show("yt-dlp.exe was not found on PATH or in Tools\\.", "yt-dlp Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return null;
+            var answer = MessageBox.Show(
+                "yt-dlp.exe & ffmpeg.exe are required for YouTube / social media downloads.\n\nDownload and install them automatically now?",
+                "Install Media Tools",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (answer != MessageBoxResult.Yes)
+                return null;
         }
 
         var q = (quality ?? "best").Trim().ToLowerInvariant();
@@ -116,7 +132,36 @@ public static class YtDlpService
 
         if (startImmediately)
         {
-            LaunchYtDlpProcess(ytDlpExe, queueManager, task, onStatus);
+            if (ytDlpExe == null || FindFfmpegExe() == null)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await ToolsDownloaderService.EnsureAllToolsAsync(msg =>
+                            Application.Current?.Dispatcher.BeginInvoke(() => onStatus?.Invoke(msg)));
+                        var readyExe = FindYtDlpExe();
+                        if (readyExe != null)
+                        {
+                            Application.Current?.Dispatcher.Invoke(() =>
+                                LaunchYtDlpProcess(readyExe, queueManager, task, onStatus));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Application.Current?.Dispatcher.Invoke(() =>
+                        {
+                            task.Status = DownloadStatus.Failed;
+                            task.ErrorMessage = $"Failed to install yt-dlp/ffmpeg: {ex.Message}";
+                            onStatus?.Invoke(task.ErrorMessage);
+                        });
+                    }
+                });
+            }
+            else
+            {
+                LaunchYtDlpProcess(ytDlpExe, queueManager, task, onStatus);
+            }
         }
         else
         {
@@ -206,8 +251,13 @@ public static class YtDlpService
                     _ => "-f \"bv*+ba/b\" --merge-output-format mp4"
                 };
 
+                var ffmpegExe = FindFfmpegExe();
+                var ffmpegArg = !string.IsNullOrWhiteSpace(ffmpegExe)
+                    ? $"--ffmpeg-location \"{Path.GetDirectoryName(ffmpegExe)}\" "
+                    : string.Empty;
+
                 var outputTemplate = Path.Combine(folder, baseTitle + ".%(ext)s");
-                var args = $"{formatArgs} --continue --no-playlist --newline --progress-template \"download:NOVA|%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s\" -o \"{outputTemplate}\" \"{task.Url}\"";
+                var args = $"{formatArgs} {ffmpegArg}--continue --no-playlist --newline --progress-template \"download:NOVA|%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s\" -o \"{outputTemplate}\" \"{task.Url}\"";
 
                 var psi = new ProcessStartInfo(ytDlpExe, args)
                 {

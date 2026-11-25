@@ -281,6 +281,28 @@ public partial class OptionsDialog : Window
         }
     }
 
+    private async void InstallTools_Click(object sender, RoutedEventArgs e)
+    {
+        InstallToolsBtn.IsEnabled = false;
+        ToolsFeedbackText.Text = "Checking and downloading missing media tools...";
+        try
+        {
+            await ToolsDownloaderService.EnsureAllToolsAsync(msg =>
+                Dispatcher.BeginInvoke(() => ToolsFeedbackText.Text = msg));
+
+            RefreshToolStatuses();
+            ToolsFeedbackText.Text = "yt-dlp.exe and ffmpeg.exe are installed and ready!";
+        }
+        catch (Exception ex)
+        {
+            ToolsFeedbackText.Text = $"Download failed: {ex.Message}";
+        }
+        finally
+        {
+            InstallToolsBtn.IsEnabled = true;
+        }
+    }
+
     private async void UpdateYtDlp_Click(object sender, RoutedEventArgs e)
     {
         var exe = !string.IsNullOrWhiteSpace(YtDlpPathBox.Text) && File.Exists(YtDlpPathBox.Text)

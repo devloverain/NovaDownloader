@@ -353,10 +353,14 @@ public sealed class FfmpegMuxer
         if (!string.IsNullOrWhiteSpace(_customFfmpegPath) && File.Exists(_customFfmpegPath))
             return _customFfmpegPath;
 
-        // 2. WinGet links directory on Windows
+        // 2. NovaDownloader AppData Tools & WinGet links directory on Windows
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if (!string.IsNullOrEmpty(localAppData))
         {
+            var novaTool = Path.Combine(localAppData, "NovaDownloader", "Tools", "ffmpeg.exe");
+            if (File.Exists(novaTool))
+                return novaTool;
+
             var wingetLink = Path.Combine(localAppData, "Microsoft", "WinGet", "Links", "ffmpeg.exe");
             if (File.Exists(wingetLink))
                 return wingetLink;

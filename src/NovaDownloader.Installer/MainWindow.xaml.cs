@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Windows;
 using Microsoft.Win32;
@@ -72,8 +73,15 @@ public partial class MainWindow : Window
                 });
             }
 
+            if (DownloadToolsCheckBox.IsChecked == true)
+            {
+                StatusText.Text = "Installing yt-dlp.exe & ffmpeg.exe (for YouTube / HLS)...";
+                InstallProgress.Value = 78;
+                await DownloadMediaToolsAsync(msg => Dispatcher.BeginInvoke(() => StatusText.Text = msg));
+            }
+
             StatusText.Text = "Creating shortcuts...";
-            InstallProgress.Value = 82;
+            InstallProgress.Value = 90;
             var createDesktop = DesktopShortcutCheckBox.IsChecked == true;
             await Task.Run(() => CreateShortcuts(uiExe, targetDir, createDesktop));
 
@@ -167,6 +175,68 @@ public partial class MainWindow : Window
             proc?.WaitForExit(4000);
         }
         catch { }
+    }
+
+    private static async Task DownloadMediaToolsAsync(Action<string> onStatus)
+    {
+        var toolsDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "NovaDownloader",
+            "Tools");
+        Directory.CreateDirectory(toolsDir);
+
+        using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("NovaDownloader-Setup/1.2");
+
+        var ytDlpPath = Path.Combine(toolsDir, "yt-dlp.exe");
+        if (!File.Exists(ytDlpPath))
+        {
+            try
+            {
+                onStatus("Downloading yt-dlp.exe...");
+                using var resp = await client.GetAsync("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe", HttpCompletionOption.ResponseHeadersRead);
+                resp.EnsureSuccessStatusCode();
+                var tmp = ytDlpPath + ".tmp";
+                await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true))
+                {
+                    await resp.Content.CopyToAsync(fs);
+                }
+                File.Move(tmp, ytDlpPath, overwrite: true);
+            }
+            catch { }
+        }
+
+        var ffmpegPath = Path.Combine(toolsDir, "ffmpeg.exe");
+        if (!File.Exists(ffmpegPath))
+        {
+            var tempZip = Path.Combine(toolsDir, $"ffmpeg_{Guid.NewGuid():N}.zip");
+            try
+            {
+                onStatus("Downloading ffmpeg.exe...");
+                using var resp = await client.GetAsync("https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip", HttpCompletionOption.ResponseHeadersRead);
+                resp.EnsureSuccessStatusCode();
+                await using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true))
+                {
+                    await resp.Content.CopyToAsync(fs);
+                }
+
+                onStatus("Extracting ffmpeg.exe...");
+                using var archive = ZipFile.OpenRead(tempZip);
+                var entry = archive.Entries.FirstOrDefault(e =>
+                    string.Equals(Path.GetFileName(e.FullName), "ffmpeg.exe", StringComparison.OrdinalIgnoreCase));
+                if (entry != null)
+                {
+                    var tmp = ffmpegPath + ".tmp";
+                    entry.ExtractToFile(tmp, overwrite: true);
+                    File.Move(tmp, ffmpegPath, overwrite: true);
+                }
+            }
+            catch { }
+            finally
+            {
+                try { if (File.Exists(tempZip)) File.Delete(tempZip); } catch { }
+            }
+        }
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
