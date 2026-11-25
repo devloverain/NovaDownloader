@@ -73,10 +73,14 @@ public partial class MainWindow : Window
                 });
             }
 
-            StatusText.Text = "Creating shortcuts...";
+            StatusText.Text = "Creating shortcuts & uninstaller...";
             InstallProgress.Value = 85;
             var createDesktop = DesktopShortcutCheckBox.IsChecked == true;
-            await Task.Run(() => CreateShortcuts(uiExe, targetDir, createDesktop));
+            await Task.Run(() =>
+            {
+                CreateShortcuts(uiExe, targetDir, createDesktop);
+                RegisterUninstaller(targetDir, uiExe, hostExe);
+            });
 
             if (StartupCheckBox.IsChecked == true)
             {
@@ -166,6 +170,74 @@ public partial class MainWindow : Window
                 CreateNoWindow = true
             });
             proc?.WaitForExit(4000);
+        }
+        catch { }
+    }
+
+    private static void RegisterUninstaller(string targetDir, string uiExe, string hostExe)
+    {
+        try
+        {
+            var uninstallScriptPath = Path.Combine(targetDir, "uninstall.ps1");
+            var script = $$"""
+                Add-Type -AssemblyName System.Windows.Forms
+                $res = [System.Windows.Forms.MessageBox]::Show(
+                    "Are you sure you want to uninstall NovaDownloader?",
+                    "Uninstall NovaDownloader",
+                    [System.Windows.Forms.MessageBoxButtons]::YesNo,
+                    [System.Windows.Forms.MessageBoxIcon]::Question)
+                if ($res -ne [System.Windows.Forms.DialogResult]::Yes) { exit 0 }
+
+                foreach ($p in @("NovaDownloader.UI", "NovaDownloader.ExtensionHost")) {
+                    Get-Process -Name $p -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                }
+                Start-Sleep -Milliseconds 400
+
+                $hostExe = "{{hostExe.Replace("'", "''")}}"
+                if (Test-Path $hostExe) {
+                    Start-Process -FilePath $hostExe -ArgumentList "--uninstall" -WindowStyle Hidden -Wait -ErrorAction SilentlyContinue
+                }
+
+                Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "NovaDownloader" -ErrorAction SilentlyContinue
+                Remove-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\NovaDownloader" -Recurse -Force -ErrorAction SilentlyContinue
+
+                $desktopLnk = Join-Path ([Environment]::GetFolderPath("DesktopDirectory")) "NovaDownloader.lnk"
+                $startLnk = Join-Path ([Environment]::GetFolderPath("StartMenu")) "Programs\NovaDownloader.lnk"
+                Remove-Item $desktopLnk -Force -ErrorAction SilentlyContinue
+                Remove-Item $startLnk -Force -ErrorAction SilentlyContinue
+
+                $dir = "{{targetDir.Replace("'", "''")}}"
+                Start-Process -FilePath "cmd.exe" -ArgumentList "/c ping 127.0.0.1 -n 3 > nul & rmdir /s /q `"$dir`"" -WindowStyle Hidden
+
+                [System.Windows.Forms.MessageBox]::Show(
+                    "NovaDownloader has been uninstalled.",
+                    "Uninstall Complete",
+                    [System.Windows.Forms.MessageBoxButtons]::OK,
+                    [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+                """;
+
+            File.WriteAllText(uninstallScriptPath, script);
+
+            long totalBytes = 0;
+            foreach (var f in Directory.EnumerateFiles(targetDir, "*", SearchOption.AllDirectories))
+            {
+                try { totalBytes += new FileInfo(f).Length; } catch { }
+            }
+            int estimatedKb = (int)Math.Max(1, totalBytes / 1024);
+
+            using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\NovaDownloader", true);
+            if (key != null)
+            {
+                key.SetValue("DisplayName", "NovaDownloader", RegistryValueKind.String);
+                key.SetValue("DisplayVersion", "1.2.0", RegistryValueKind.String);
+                key.SetValue("Publisher", "devloverain", RegistryValueKind.String);
+                key.SetValue("InstallLocation", targetDir, RegistryValueKind.String);
+                key.SetValue("DisplayIcon", uiExe, RegistryValueKind.String);
+                key.SetValue("UninstallString", $"powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{uninstallScriptPath}\"", RegistryValueKind.String);
+                key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+                key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+                key.SetValue("EstimatedSize", estimatedKb, RegistryValueKind.DWord);
+            }
         }
         catch { }
     }
