@@ -373,6 +373,7 @@ public sealed class FfmpegMuxer
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ffmpeg", "bin", "ffmpeg.exe"),
             @"C:\ffmpeg\bin\ffmpeg.exe",
             @"C:\tools\ffmpeg\bin\ffmpeg.exe",
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools", "ffmpeg.exe"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tools", "ffmpeg", "ffmpeg.exe"),
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe")
         };

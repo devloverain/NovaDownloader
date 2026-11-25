@@ -31,5 +31,6 @@ schedules.json
 !docs/**/*.png
 !docs/**/*.gif
 
-# Generated installer payload
+# Generated installer payload & large bundled binaries (bundled into Release asset)
 src/NovaDownloader.Installer/payload.zip
+src/NovaDownloader.UI/Tools/*.exe
