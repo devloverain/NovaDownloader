@@ -1,0 +1,13 @@
+{
+  "name": "com.novadownloader.host",
+  "description": "NovaDownloader Native Messaging Host for Chrome \u0026 Edge",
+  "path": "C:\\Users\\Alireza\\.gemini\\antigravity\\scratch\\NovaDownloader\\src\\NovaDownloader.ExtensionHost\\bin\\Debug\\net10.0\\NovaDownloader.ExtensionHost.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://maninekbhekackeejegfbnelaognjaob/",
+    "chrome-extension://knldjmfmddgdpolphpmdmbfpdocgmlon/",
+    "chrome-extension://eafggjebnkkjllflmchmccfgckpogbhk/",
+    "chrome-extension://nljpmlghmepbblfllljgeffcghklnmef/",
+    "chrome-extension://pbgjfpjhhblfkjhffgacghffflnlnffg/"
+  ]
+}

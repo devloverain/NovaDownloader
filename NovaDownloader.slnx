@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NovaDownloader.Core/NovaDownloader.Core.csproj" />
+    <Project Path="src/NovaDownloader.ExtensionHost/NovaDownloader.ExtensionHost.csproj" />
+    <Project Path="src/NovaDownloader.Media/NovaDownloader.Media.csproj" />
+    <Project Path="src/NovaDownloader.UI/NovaDownloader.UI.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "NovaDownloader - Media & Stream Downloader",
+  "version": "1.2.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAps9UXMwgkyellFOlsR0oZGh+ekhNhKyBhNjh3pw2elDk/TEBNDgQj/N7Jt+51uPN+/lxjS/MM60bfiBSssWXlwOr3ZTPfZsA6sjP9UWs80DhokFxHqTEaYheH5hPC6Nd+QItqBP2Mmjgddg2PhJFVDIiUSk57m2MI//EPK7bHhxUXq8a9Wxmq7oE/c8Of0tHfbhUc5J/Gy2bXzHayUc6V6cGUh+ERqi9JXsuI2/BTNYlHw/4LF9u3U0Ns0HWfOJ0TQCNrLnPpkYDR7LrPuOpBHRA91TRAm0LpDAobLT5D7y0EHR1fpjNPIMR8hquSVhyj8a7H2gJ0SfDQN0Qv7qeaQIDAQAB",
+  "description": "Ultra-fast video, audio, and file download accelerator with native NovaDownloader desktop integration.",
+  "permissions": [
+    "webRequest",
+    "declarativeNetRequest",
+    "downloads",
+    "nativeMessaging",
+    "storage",
+    "activeTab",
+    "scripting",
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_title": "NovaDownloader",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

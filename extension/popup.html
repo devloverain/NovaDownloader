@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaDownloader</title>
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: #131b2e;
+      --card-hover: #1a253e;
+      --border-color: rgba(99, 102, 241, 0.2);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --secondary: #06b6d4;
+      --accent: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 380px;
+      min-height: 460px;
+      max-height: 580px;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Header */
+    .header {
+      padding: 14px 16px;
+      background: rgba(19, 27, 46, 0.7);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a5b4fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    /* Connection Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #34d399;
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.offline {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    .status-badge.offline .status-dot {
+      background-color: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    /* Tab Summary Bar */
+    .tab-bar {
+      padding: 10px 16px;
+      background: rgba(15, 23, 42, 0.5);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tab-title-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    .media-count-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(99, 102, 241, 0.25);
+      color: #a5b4fc;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    /* Media List Container */
+    .media-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Media Card */
+    .media-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .media-card:hover {
+      background: var(--card-hover);
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #38bdf8;
+    }
+
+    .card-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .card-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-quality {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-format {
+      background: rgba(99, 102, 241, 0.2);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .badge-size {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-download {
+      flex: 1;
+      padding: 6px 12px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-download:hover {
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+      filter: brightness(1.1);
+    }
+
+    .btn-download:active {
+      transform: scale(0.98);
+    }
+
+    .btn-copy {
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-copy:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
+    }
+
+    /* Empty State */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .empty-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px dashed rgba(99, 102, 241, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #818cf8;
+      margin-bottom: 4px;
+    }
+
+    .empty-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .empty-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 260px;
+    }
+
+    .btn-rescan {
+      margin-top: 6px;
+      padding: 7px 16px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid var(--primary);
+      color: #c7d2fe;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-rescan:hover {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 10px 16px;
+      background: rgba(19, 27, 46, 0.8);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: #818cf8;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .btn-download-all {
+      padding: 3px 8px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(6, 182, 212, 0.8));
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="header">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="NovaDownloader Logo">
+      <span class="brand-title">NovaDownloader</span>
+    </div>
+    <div id="statusBadge" class="status-badge">
+      <span class="status-dot"></span>
+      <span id="statusText">Checking...</span>
+    </div>
+  </header>
+
+  <!-- Tab Info Bar -->
+  <div class="tab-bar">
+    <span id="tabTitle" class="tab-title-text">Detecting active page...</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span id="mediaCount" class="media-count-badge">0 Found</span>
+      <button id="btnDownloadAll" class="btn-download-all" style="display: none;">Download All</button>
+    </div>
+  </div>
+
+  <!-- Media Items Container -->
+  <main id="mediaContainer" class="media-container">
+    <!-- Populated dynamically via popup.js -->
+  </main>
+
+  <!-- Empty State (Shown when no media detected) -->
+  <div id="emptyState" class="empty-state" style="display: none;">
+    <div class="empty-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+        <path d="M2 12h20"></path>
+      </svg>
+    </div>
+    <div class="empty-title">No Media Streams Detected</div>
+    <div class="empty-desc">Play a video, music track, or stream on this page to automatically detect downloadable media.</div>
+    <button id="btnRescan" class="btn-rescan">Rescan Page</button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #cbd5e1;">
+      <input type="checkbox" id="chkAutoIntercept" checked style="accent-color: #6366f1; cursor: pointer;">
+      <span>Auto-intercept</span>
+    </label>
+    <div>
+      <a id="btnClear">Clear</a> &bull; 
+      <a id="btnRefresh">Refresh</a>
+    </div>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

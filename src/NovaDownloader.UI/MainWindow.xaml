@@ -1,0 +1,534 @@
+<Window x:Class="NovaDownloader.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:NovaDownloader.UI.Converters"
+        xmlns:controls="clr-namespace:NovaDownloader.UI.Controls"
+        xmlns:models="clr-namespace:NovaDownloader.Core.Models;assembly=NovaDownloader.Core"
+        mc:Ignorable="d"
+        Title="NovaDownloader"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Height="720" Width="1220" MinHeight="520" MinWidth="920"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="#14161D" Foreground="#F1F5F9" FontFamily="Segoe UI">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      ResizeBorderThickness="6"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <conv:FileIconConverter x:Key="FileIconConverter"/>
+        <conv:StatusDisplayConverter x:Key="StatusDisplayConverter"/>
+        <conv:StatusBrushConverter x:Key="StatusBrushConverter"/>
+    </Window.Resources>
+
+    <Border BorderBrush="#2B2E3B" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- 0: Custom Title Bar -->
+                <RowDefinition Height="32"/>
+                <!-- 1: Menu Bar -->
+                <RowDefinition Height="Auto"/>
+                <!-- 2: Icon Toolbar + Search -->
+                <RowDefinition Height="Auto"/>
+                <!-- 3: Main Body (Categories Tree + Download DataGrid) -->
+                <RowDefinition Height="*"/>
+                <!-- 4: Bottom Status Bar -->
+                <RowDefinition Height="28"/>
+            </Grid.RowDefinitions>
+
+            <!-- ================= 0: CUSTOM TITLE BAR ================= -->
+            <Grid Grid.Row="0" Background="{StaticResource TitleBarBg}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                    <Image Source="pack://application:,,,/Assets/Icons/app_logo.png" Width="18" Height="18" Margin="0,0,8,0"/>
+                    <TextBlock Text="NovaDownloader" FontSize="12.5" FontWeight="SemiBold" Foreground="#E2E8F0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="—" Click="MinimizeButton_Click" Style="{StaticResource CaptionButtonStyle}" ToolTip="Minimize"/>
+                    <Button Content="☐" Click="MaximizeButton_Click" Style="{StaticResource CaptionButtonStyle}" ToolTip="Maximize / Restore"/>
+                    <Button Content="✕" Click="CloseButton_Click" Style="{StaticResource CloseCaptionButtonStyle}" ToolTip="Close"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ================= 1: MENU BAR ================= -->
+            <Menu Grid.Row="1" BorderBrush="#262834" BorderThickness="0,0,0,1">
+                <MenuItem Header="_Tasks">
+                    <MenuItem Header="Add New Download..." Command="{Binding AddDownloadCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Hide to Tray" Click="CloseButton_Click"/>
+                    <MenuItem Header="Exit" Click="ExitMenuItem_Click"/>
+                </MenuItem>
+                <MenuItem Header="_File">
+                    <MenuItem Header="Open Downloaded File" Command="{Binding OpenFileCommand}"/>
+                    <MenuItem Header="Open Containing Folder" Command="{Binding OpenFolderCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Remove Selected" Command="{Binding DeleteCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Downloads">
+                    <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
+                    <MenuItem Header="Stop" Command="{Binding StopCommand}"/>
+                    <MenuItem Header="Stop All" Command="{Binding StopAllCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Delete Completed" Command="{Binding DeleteCompletedCommand}"/>
+                    <MenuItem Header="Browser Integration..." Command="{Binding InstallExtensionCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_View">
+                    <MenuItem Header="All Downloads" Command="{Binding SelectCategoryCommand}" CommandParameter="All"/>
+                    <MenuItem Header="Unfinished" Command="{Binding SelectCategoryCommand}" CommandParameter="Unfinished"/>
+                    <MenuItem Header="Finished" Command="{Binding SelectCategoryCommand}" CommandParameter="Finished"/>
+                </MenuItem>
+                <MenuItem Header="_Options">
+                    <MenuItem Header="Settings..." Command="{Binding OptionsCommand}"/>
+                    <MenuItem Header="Browser Integration..." Command="{Binding InstallExtensionCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Help">
+                    <MenuItem Header="Browser Extension Setup..." Command="{Binding InstallExtensionCommand}"/>
+                </MenuItem>
+            </Menu>
+
+            <!-- ================= 2: ICON TOOLBAR + SEARCH ================= -->
+            <Border Grid.Row="2" Background="{StaticResource ToolbarBg}" BorderBrush="#2B2E3B" BorderThickness="0,0,0,1" Padding="8,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding AddDownloadCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_add_url.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Add URL" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding ResumeCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_resume.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Resume" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding StopCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_stop.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Stop" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding StopAllCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_stop_all.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Stop All" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Border Width="1" Background="#2B2E3B" Margin="6,6"/>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding DeleteCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_delete.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Delete" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding DeleteCompletedCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_delete_completed.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Delete Completed" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Border Width="1" Background="#2B2E3B" Margin="6,6"/>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding OptionsCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_options.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Options" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource ToolbarIconButtonStyle}" Command="{Binding SchedulerCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_scheduler.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Scheduler" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Border Width="1" Background="#2B2E3B" Margin="6,6"/>
+
+                        <Button x:Name="StartQueueButton" Style="{StaticResource ToolbarIconButtonStyle}" Click="StartQueueButton_Click">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_start_queue.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Start Queue ▾" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="StopQueueButton" Style="{StaticResource ToolbarIconButtonStyle}" Click="StopQueueButton_Click">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="pack://application:,,,/Assets/Icons/tb_stop_queue.png" Width="28" Height="28" Margin="0,0,0,3"/>
+                                <TextBlock Text="Stop Queue ▾" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Search Box -->
+                    <Border Grid.Column="1" Background="#262933" BorderBrush="#353846" BorderThickness="1" CornerRadius="6"
+                            Padding="10,5" Width="220" VerticalAlignment="Center" Margin="8,0,4,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Source="pack://application:,,,/Assets/Icons/ui_search.png" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBox x:Name="SearchBox" Grid.Column="1"
+                                     Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" Foreground="#F1F5F9" CaretBrush="#22D3EE"
+                                     BorderThickness="0" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Search downloads..." Foreground="#64748B" FontSize="12"
+                                       VerticalAlignment="Center" IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ================= 3: MAIN BODY (SIDEBAR + DATAGRID) ================= -->
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="215" MinWidth="160" MaxWidth="340"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Categories Tree -->
+                <Border Grid.Column="0" Background="{StaticResource SidebarBg}" Padding="6,8">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Categories" FontSize="11.5" Foreground="#64748B" Margin="10,2,0,6"/>
+                        <TreeView Background="Transparent" BorderThickness="0"
+                                  Foreground="#E2E8F0"
+                                  RenderOptions.BitmapScalingMode="HighQuality"
+                                  ItemContainerStyle="{StaticResource CategoryTreeItemStyle}"
+                                  SelectedItemChanged="CategoryTree_SelectedItemChanged">
+                            <TreeView.Resources>
+                                <Style TargetType="TreeViewItem" BasedOn="{StaticResource CategoryTreeItemStyle}"/>
+                            </TreeView.Resources>
+                            <TreeViewItem IsExpanded="True" IsSelected="True" Tag="All">
+                                <TreeViewItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="pack://application:,,,/Assets/Icons/cat_all.png" Width="15" Height="15" Margin="0,0,7,0"/>
+                                        <TextBlock Text="All Downloads" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TreeViewItem.Header>
+                                <TreeViewItem Tag="Compressed">
+                                    <TreeViewItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="pack://application:,,,/Assets/Icons/cat_compressed.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                            <TextBlock Text="Compressed" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TreeViewItem.Header>
+                                </TreeViewItem>
+                                <TreeViewItem Tag="Documents">
+                                    <TreeViewItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="pack://application:,,,/Assets/Icons/cat_documents.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                            <TextBlock Text="Documents" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TreeViewItem.Header>
+                                </TreeViewItem>
+                                <TreeViewItem Tag="Music">
+                                    <TreeViewItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="pack://application:,,,/Assets/Icons/cat_music.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                            <TextBlock Text="Music" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TreeViewItem.Header>
+                                </TreeViewItem>
+                                <TreeViewItem Tag="Programs">
+                                    <TreeViewItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="pack://application:,,,/Assets/Icons/cat_programs.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                            <TextBlock Text="Programs" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TreeViewItem.Header>
+                                </TreeViewItem>
+                                <TreeViewItem Tag="Video">
+                                    <TreeViewItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="pack://application:,,,/Assets/Icons/cat_video.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                            <TextBlock Text="Video" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TreeViewItem.Header>
+                                </TreeViewItem>
+                            </TreeViewItem>
+
+                            <TreeViewItem Tag="Unfinished">
+                                <TreeViewItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="pack://application:,,,/Assets/Icons/cat_unfinished.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Unfinished" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TreeViewItem.Header>
+                            </TreeViewItem>
+
+                            <TreeViewItem Tag="Finished">
+                                <TreeViewItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="pack://application:,,,/Assets/Icons/cat_finished.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Finished" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TreeViewItem.Header>
+                            </TreeViewItem>
+
+                            <TreeViewItem Tag="GrabberProjects">
+                                <TreeViewItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="pack://application:,,,/Assets/Icons/cat_grabber.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Grabber Projects" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TreeViewItem.Header>
+                            </TreeViewItem>
+
+                            <TreeViewItem x:Name="QueuesTreeItem" Tag="Queues" IsExpanded="True">
+                                <TreeViewItem.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="pack://application:,,,/Assets/Icons/cat_queues.png" Width="16" Height="16" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Queues" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </TreeViewItem.Header>
+                            </TreeViewItem>
+                        </TreeView>
+                    </DockPanel>
+                </Border>
+
+                <!-- GridSplitter -->
+                <GridSplitter Grid.Column="1" Width="1" HorizontalAlignment="Stretch" Background="#2B2E3B"/>
+
+                <!-- Right Downloads DataGrid -->
+                <DataGrid x:Name="DownloadsGrid" Grid.Column="2"
+                          ItemsSource="{Binding FilteredTasks}"
+                          SelectedItem="{Binding SelectedTask}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          AlternationCount="2"
+                          SelectionMode="Extended"
+                          SelectionChanged="DownloadsGrid_SelectionChanged"
+                          ContextMenuOpening="DownloadsGrid_ContextMenuOpening"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#282A34"
+                          HeadersVisibility="Column"
+                          Background="{StaticResource GridBg}"
+                          BorderThickness="0"
+                          RowHeight="30"
+                          ColumnHeaderStyle="{StaticResource IdmColumnHeaderStyle}"
+                          RowStyle="{StaticResource IdmDataGridRowStyle}"
+                          CellStyle="{StaticResource IdmDataGridCellStyle}">
+
+                    <DataGrid.InputBindings>
+                        <KeyBinding Key="Delete" Command="{Binding DeleteCommand}"/>
+                    </DataGrid.InputBindings>
+
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Resume" Command="{Binding ResumeCommand}">
+                                <MenuItem.Icon>
+                                    <Image Source="pack://application:,,,/Assets/Icons/tb_resume.png" Width="15" Height="15" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Stop" Command="{Binding StopCommand}">
+                                <MenuItem.Icon>
+                                    <Image Source="pack://application:,,,/Assets/Icons/tb_stop.png" Width="15" Height="15" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MoveToQueueMenuItem" Header="Move to Schedule / Queue">
+                                <MenuItem.Icon>
+                                    <Image Source="pack://application:,,,/Assets/Icons/tb_scheduler.png" Width="15" Height="15" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Open File" Command="{Binding OpenFileCommand}">
+                                <MenuItem.Icon>
+                                    <Image Source="pack://application:,,,/Assets/Icons/cat_documents.png" Width="15" Height="15" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Open Containing Folder" Command="{Binding OpenFolderCommand}">
+                                <MenuItem.Icon>
+                                    <Image Source="pack://application:,,,/Assets/Icons/cat_folder.png" Width="15" Height="15" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Copy URL" Command="{Binding CopyUrlCommand}">
+                                <MenuItem.Icon>
+                                    <Path Data="M 4 2 H 10 V 8 H 8.5 V 3.5 H 4 Z M 2 5 H 8 V 12 H 2 Z"
+                                          Stroke="#38BDF8" StrokeThickness="1.3" Stretch="Uniform" Width="13" Height="13"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Delete..." Command="{Binding DeleteCommand}">
+                                <MenuItem.Icon>
+                                    <Image Source="pack://application:,,,/Assets/Icons/tb_delete.png" Width="15" Height="15" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+
+                    <DataGrid.Columns>
+                        <!-- File Name -->
+                        <DataGridTemplateColumn Header="File Name" Width="270" SortMemberPath="FileName">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Image Source="{Binding FileName, Converter={StaticResource FileIconConverter}}"
+                                               Width="16" Height="16" Margin="0,0,8,0"
+                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                               SnapsToDevicePixels="True"/>
+                                        <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding Url}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Size -->
+                        <DataGridTextColumn Header="Size" Binding="{Binding FormattedTotalBytes}" Width="90" SortMemberPath="TotalBytes">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+                                    <Setter Property="Typography.NumeralStyle" Value="Lining"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Status (60-120 FPS Physics FluidProgressBar for Downloading/Paused, Colored Label otherwise) -->
+                        <DataGridTemplateColumn Header="Status" Width="170" SortMemberPath="Status">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid VerticalAlignment="Center">
+                                        <!-- Active / Paused FluidProgressBar -->
+                                        <controls:FluidProgressBar Height="19"
+                                                                   Value="{Binding ProgressPercentage, Mode=OneWay}"
+                                                                   Status="{Binding Status, Mode=OneWay}"
+                                                                   FontSize="10.5"
+                                                                   ShowText="True">
+                                            <controls:FluidProgressBar.Style>
+                                                <Style TargetType="controls:FluidProgressBar">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:DownloadStatus.Downloading}">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:DownloadStatus.Paused}">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </controls:FluidProgressBar.Style>
+                                        </controls:FluidProgressBar>
+
+                                        <!-- Non-Downloading/Non-Paused Status Text -->
+                                        <TextBlock Foreground="{Binding Status, Converter={StaticResource StatusBrushConverter}}"
+                                                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                   ToolTip="{Binding ErrorMessage}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:DownloadStatus.Downloading}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="{x:Static models:DownloadStatus.Paused}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource StatusDisplayConverter}">
+                                                    <Binding Path="Status"/>
+                                                    <Binding Path="ProgressPercentage"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Time Left -->
+                        <DataGridTextColumn Header="Time left" Binding="{Binding FormattedRemainingTime}" Width="88">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+                                    <Setter Property="Typography.NumeralStyle" Value="Lining"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Transfer Rate -->
+                        <DataGridTextColumn Header="Transfer rate" Binding="{Binding FormattedSpeed}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+                                    <Setter Property="Typography.NumeralStyle" Value="Lining"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Last Try -->
+                        <DataGridTextColumn Header="Last Try" Binding="{Binding FormattedLastTry}" Width="85"/>
+
+                        <!-- Description -->
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- ================= 4: BOTTOM STATUS BAR ================= -->
+            <Border Grid.Row="4" Background="{StaticResource TitleBarBg}" BorderBrush="#2B2E3B" BorderThickness="0,1,0,0" Padding="12,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="7" Height="7" Fill="#22C55E" Margin="0,0,7,0"/>
+                        <TextBlock Text="Connected" FontSize="11.5" Foreground="#E2E8F0" VerticalAlignment="Center"/>
+                        <TextBlock Text="|" FontSize="11.5" Foreground="#475569" Margin="10,0"/>
+                        <TextBlock FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center">
+                            <Run Text="Active: "/><Run Text="{Binding ActiveCount, Mode=OneWay}"/>
+                            <Run Text=" | Queued: "/><Run Text="{Binding QueuedCount, Mode=OneWay}"/>
+                            <Run Text=" | Total: "/><Run Text="{Binding TotalCount, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="#22D3EE">
+                        <Run Text="Total Speed: "/><Run Text="{Binding FormattedTotalSpeed, Mode=OneWay}"/>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,35 @@
+# Build outputs
+bin/
+obj/
+publish/
+releases/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# Runtime / test / user state files
+downloads.json
+downloads.json.tmp
+settings.json
+schedules.json
+*.log
+*.part
+*.novapart
+*.mp4
+*.mkv
+*.mp3
+*.rar
+*.zip
+!docs/**/*.png
+!docs/**/*.gif
+
+# Generated installer payload
+src/NovaDownloader.Installer/payload.zip
