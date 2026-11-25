@@ -9,16 +9,16 @@ if (Test-Path $payloadZip) { Remove-Item $payloadZip -Force }
 New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
 New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
 
-Write-Host "1/4 Publishing NovaDownloader.ExtensionHost (win-x64 single-file)..."
-dotnet publish "$root\src\NovaDownloader.ExtensionHost\NovaDownloader.ExtensionHost.csproj" `
-    -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o "$stageDir"
-
-Write-Host "2/4 Publishing NovaDownloader.UI (win-x64 single-file)..."
+Write-Host "1/4 Publishing NovaDownloader.UI (self-contained shared runtime)..."
 dotnet publish "$root\src\NovaDownloader.UI\NovaDownloader.UI.csproj" `
-    -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "$stageDir"
+    -c Release -r win-x64 --self-contained true -o "$stageDir"
 
-# Remove .pdb files from payload to keep installer compact
-Get-ChildItem $stageDir -Filter "*.pdb" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+Write-Host "2/4 Publishing NovaDownloader.ExtensionHost (sharing runtime)..."
+dotnet publish "$root\src\NovaDownloader.ExtensionHost\NovaDownloader.ExtensionHost.csproj" `
+    -c Release -r win-x64 --self-contained false -o "$stageDir"
+
+# Remove .pdb and xml doc files from payload to keep installer compact
+Get-ChildItem $stageDir -Include "*.pdb","*.xml" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host "3/4 Packaging payload.zip..."
 Compress-Archive -Path "$stageDir\*" -DestinationPath $payloadZip -CompressionLevel Optimal
@@ -28,4 +28,5 @@ dotnet publish "$root\src\NovaDownloader.Installer\NovaDownloader.Installer.cspr
     -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "$releaseDir"
 
 Get-ChildItem $releaseDir -Filter "*.pdb" | Remove-Item -Force -ErrorAction SilentlyContinue
-Write-Host "DONE -> $releaseDir\NovaDownloader-Setup.exe"
+$sizeMb = [math]::Round((Get-Item "$releaseDir\NovaDownloader-Setup.exe").Length / 1MB, 1)
+Write-Host "DONE -> $releaseDir\NovaDownloader-Setup.exe ($sizeMb MB)"
