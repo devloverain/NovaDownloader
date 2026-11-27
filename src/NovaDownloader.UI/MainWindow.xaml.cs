@@ -59,9 +59,62 @@ public partial class MainWindow : Window
         // 5. Process any queued downloads sent while the app was offline
         _ = ProcessOfflineQueueAsync();
 
+        // 6. Ensure browser native messaging host is registered (self-heals if removed or moved)
+        _ = Task.Run(EnsureNativeHostRegistered);
+
         if (startMinimized)
         {
             Hide();
+        }
+    }
+
+    private static void EnsureNativeHostRegistered()
+    {
+        try
+        {
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var hostExe = Path.Combine(baseDir, "NovaDownloader.ExtensionHost.exe");
+            var expectedManifest = Path.GetFullPath(Path.Combine(baseDir, "com.novadownloader.host.json"));
+            if (!File.Exists(hostExe))
+                return;
+
+            var keyPaths = new[]
+            {
+                @"Software\Google\Chrome\NativeMessagingHosts\com.novadownloader.host",
+                @"Software\Opera Software\NativeMessagingHosts\com.novadownloader.host",
+                @"Software\Opera Software\Opera Stable\NativeMessagingHosts\com.novadownloader.host"
+            };
+
+            var needsInstall = !File.Exists(expectedManifest);
+            if (!needsInstall)
+            {
+                foreach (var subKey in keyPaths)
+                {
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subKey, writable: false);
+                    var val = key?.GetValue(null) as string;
+                    if (string.IsNullOrWhiteSpace(val) ||
+                        !string.Equals(Path.GetFullPath(val), expectedManifest, StringComparison.OrdinalIgnoreCase))
+                    {
+                        needsInstall = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!needsInstall)
+                return;
+
+            using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(hostExe, "--install")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = baseDir
+            });
+            proc?.WaitForExit(5000);
+        }
+        catch
+        {
+            // Best-effort self-heal on startup
         }
     }
 
@@ -252,6 +305,7 @@ public partial class MainWindow : Window
         _ipcService.Dispose();
         _queueManager.Dispose();
         base.OnClosing(e);
+        Application.Current?.Shutdown();
     }
 
     private void CategoryTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

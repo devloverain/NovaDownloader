@@ -36,13 +36,17 @@ if %ERRORLEVEL% equ 0 (
 )
 
 echo Registering Native Messaging Host for Microsoft Edge...
-reg add "HKCU\Software\Microsoft\Edge\NativeMessagingHosts\com.novadownloader.host" /ve /t REG_SZ /d "!MANIFEST_PATHExternal:!" /f >nul
 reg add "HKCU\Software\Microsoft\Edge\NativeMessagingHosts\com.novadownloader.host" /ve /t REG_SZ /d "!MANIFEST_PATH!" /f >nul
 if %ERRORLEVEL% equ 0 (
     echo [OK] Edge registered successfully.
 ) else (
     echo [WARN] Failed to write Edge registry key.
 )
+
+echo Registering Native Messaging Host for Opera...
+reg add "HKCU\Software\Opera Software\NativeMessagingHosts\com.novadownloader.host" /ve /t REG_SZ /d "!MANIFEST_PATH!" /f >nul
+reg add "HKCU\Software\Opera Software\Opera Stable\NativeMessagingHosts\com.novadownloader.host" /ve /t REG_SZ /d "!MANIFEST_PATH!" /f >nul
+reg add "HKCU\Software\Opera Software\Opera GX Stable\NativeMessagingHosts\com.novadownloader.host" /ve /t REG_SZ /d "!MANIFEST_PATH!" /f >nul
 
 echo Registering Native Messaging Host for Brave Browser...
 reg add "HKCU\Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\com.novadownloader.host" /ve /t REG_SZ /d "!MANIFEST_PATH!" /f >nul

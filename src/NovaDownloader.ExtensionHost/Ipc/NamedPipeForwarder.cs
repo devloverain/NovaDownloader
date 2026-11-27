@@ -141,6 +141,7 @@ public class NamedPipeForwarder
                 Path.Combine(currentDir, "..", "NovaDownloader.UI", "NovaDownloader.UI.exe"),
                 Path.Combine(currentDir, "..", "..", "NovaDownloader.UI", "bin", "Debug", "net10.0-windows", "NovaDownloader.UI.exe"),
                 Path.Combine(currentDir, "..", "..", "..", "..", "NovaDownloader.UI", "bin", "Debug", "net10.0-windows", "NovaDownloader.UI.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "NovaDownloader", "NovaDownloader.UI.exe"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NovaDownloader", "NovaDownloader.UI.exe"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "NovaDownloader", "NovaDownloader.UI.exe")
             };

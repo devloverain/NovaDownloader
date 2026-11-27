@@ -229,7 +229,7 @@ public partial class MainWindow : Window
             if (key != null)
             {
                 key.SetValue("DisplayName", "NovaDownloader", RegistryValueKind.String);
-                key.SetValue("DisplayVersion", "1.2.0", RegistryValueKind.String);
+                key.SetValue("DisplayVersion", "1.2.1", RegistryValueKind.String);
                 key.SetValue("Publisher", "devloverain", RegistryValueKind.String);
                 key.SetValue("InstallLocation", targetDir, RegistryValueKind.String);
                 key.SetValue("DisplayIcon", uiExe, RegistryValueKind.String);
